@@ -1,0 +1,8 @@
+this is a simple socks4 proxy server that is intended to be very efficient
+
+dependencies used:
+  - libevent (https://github.com/libevent/libevent)
+
+build & run:
+  - make
+  - ./socks4
