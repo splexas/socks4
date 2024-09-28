@@ -1,7 +1,7 @@
 CC = clang
-CFLAGS = -Wall -Wextra -levent
-BUILD_DIR = build/
+CFLAGS = -g -O3 -Wall -Wextra -levent
 
+BUILD_DIR = build/
 BINARY_OUT = socks4
 
 OBJFILES := $(BUILD_DIR)main.o $(BUILD_DIR)socks4.o
@@ -12,8 +12,8 @@ server: $(OBJFILES)
 
 $(BUILD_DIR)%.o: %.c
 	@mkdir -p $(BUILD_DIR)
-	$(CC) -Wall -Wextra -c $< -o $@
+	$(CC) -g -Wall -Wextra -c $< -o $@
 
 .PHONY: clean
 clean:
-	@rm -r $(BUILD_DIR)*
+	@rm -r $(BUILD_DIR)* $(BINARY_OUT)
