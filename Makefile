@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -g -O3 -Wall -Wextra -levent
+CFLAGS = -g -fsanitize=address -Wall -Wextra -levent
 
 BUILD_DIR = build/
 BINARY_OUT = socks4
@@ -12,7 +12,7 @@ server: $(OBJFILES)
 
 $(BUILD_DIR)%.o: %.c
 	@mkdir -p $(BUILD_DIR)
-	$(CC) -g -Wall -Wextra -c $< -o $@
+	$(CC) -g -fsanitize=address -Wall -Wextra -c $< -o $@
 
 .PHONY: clean
 clean:

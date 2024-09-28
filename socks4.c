@@ -14,9 +14,16 @@
 
 static inline void socks4_client_free(socks4_client_t *client)
 {
+    /*
+    Calling bufferevent_free does not necessarily release the bufferevent.
+    Reason being there are pending callback (to be executed) for the bufferevent. Meaning the bufferevent will be released only after all pending callbacks have been executed.
+    */
+    bufferevent_setcb(client->base, NULL, NULL, NULL, NULL);
     bufferevent_free(client->base);
-    if (client->dst != NULL)
+    if (client->dst != NULL) {
+        bufferevent_setcb(client->dst, NULL, NULL, NULL, NULL);
         bufferevent_free(client->dst);
+    }
     free(client);
 }
 
@@ -24,12 +31,6 @@ static void
 dst_read_cb(struct bufferevent *bev, void *ctx)
 {
     socks4_client_t *client = (socks4_client_t *)ctx;
-
-    /*if (client->base == NULL) {
-        socks4_client_free(client);
-        return;
-    }*/
-
     struct evbuffer *input = bufferevent_get_input(bev);
 
     if (bufferevent_write_buffer(client->base,
@@ -56,11 +57,6 @@ dst_event_cb(struct bufferevent *bev, short events, void *ctx)
             socks4_client_free(client);
             return;
         }
-
-        /*if (client->base == NULL) {
-            socks4_client_free(client);
-            return;
-        }*/
 
         socks4_packet_t reply;
         reply.vn = 0; // reply code
