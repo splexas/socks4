@@ -6,7 +6,7 @@ int main(void) {
     struct event_base *base = event_base_new();
 
     if (socks4_init(base, "127.0.0.1", 55555) != 0) {
-        fprintf(stderr, "socks4_init failed");
+        fprintf(stderr, "socks4_init failed\n");
         event_base_free(base);
         return 1;
     }
