@@ -18,10 +18,13 @@ static inline void socks4_client_free(socks4_client_t *client)
     Calling bufferevent_free does not necessarily release the bufferevent.
     Reason being there are pending callback (to be executed) for the bufferevent. Meaning the bufferevent will be released only after all pending callbacks have been executed.
     */
-    bufferevent_setcb(client->base, NULL, NULL, NULL, NULL);
+
+    printf("freeing client %p\n", client);
+
+    // https://github.com/libevent/libevent/blob/master/bufferevent.c#L811
     bufferevent_free(client->base);
+
     if (client->dst != NULL) {
-        bufferevent_setcb(client->dst, NULL, NULL, NULL, NULL);
         bufferevent_free(client->dst);
     }
     free(client);
@@ -30,6 +33,7 @@ static inline void socks4_client_free(socks4_client_t *client)
 static void
 dst_read_cb(struct bufferevent *bev, void *ctx)
 {
+    printf("1. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
     struct evbuffer *input = bufferevent_get_input(bev);
 
@@ -45,6 +49,7 @@ dst_read_cb(struct bufferevent *bev, void *ctx)
 static void
 dst_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
+    printf("2. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
     if (events & BEV_EVENT_CONNECTED) {
         fprintf(stdout, "Destination bufferevent connected!\n");
@@ -89,6 +94,7 @@ dst_event_cb(struct bufferevent *bev, short events, void *ctx)
 static void
 read_cb(struct bufferevent *bev, void *ctx)
 {
+    printf("3. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
     // client->base should not be NULL, client->dst could be.
 
@@ -185,6 +191,7 @@ read_cb(struct bufferevent *bev, void *ctx)
 static void
 event_cb(struct bufferevent *bev UNUSED, short events, void *ctx)
 {
+    printf("4. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
     if (events & BEV_EVENT_ERROR) {
         fprintf(stderr, "Error from socks4 client bufferevent\n");
