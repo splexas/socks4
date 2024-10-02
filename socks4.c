@@ -14,14 +14,6 @@
 
 static inline void socks4_client_free(socks4_client_t *client)
 {
-    /*
-    Calling bufferevent_free does not necessarily release the bufferevent.
-    Reason being there are pending callback (to be executed) for the bufferevent. Meaning the bufferevent will be released only after all pending callbacks have been executed.
-    */
-
-    printf("freeing client %p. dst: %p\n", client, client->dst);
-
-    // https://github.com/libevent/libevent/blob/master/bufferevent.c#L811
     bufferevent_free(client->base);
 
     if (client->has_dst) {
@@ -35,7 +27,8 @@ static inline void socks4_client_free(socks4_client_t *client)
 static void
 dst_read_cb(struct bufferevent *bev, void *ctx)
 {
-    printf("1. ctx: %p\n", ctx);
+    //printf("1. ctx: %p\n", ctx);
+
     socks4_client_t *client = (socks4_client_t *)ctx;
     if (client->dc == true) {
         bufferevent_free(bev);
@@ -56,10 +49,10 @@ dst_read_cb(struct bufferevent *bev, void *ctx)
 static void
 dst_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
-    printf("2. ctx: %p\n", ctx);
+    //printf("2. ctx: %p\n", ctx);
+
     socks4_client_t *client = (socks4_client_t *)ctx;
     if (client->dc == true) {
-        printf("dc flag set. disconnecting dst bev and freeing client\n");
         bufferevent_free(bev);
         free(client);
         return;
@@ -107,7 +100,8 @@ dst_event_cb(struct bufferevent *bev, short events, void *ctx)
 static void
 read_cb(struct bufferevent *bev, void *ctx)
 {
-    printf("3. ctx: %p\n", ctx);
+    //printf("3. ctx: %p\n", ctx);
+
     socks4_client_t *client = (socks4_client_t *)ctx;
     // client->base should not be NULL, client->dst could be.
 
@@ -186,7 +180,8 @@ read_cb(struct bufferevent *bev, void *ctx)
             client->has_dst = true;
         }
         else if (p->cd == SOCKS4_CD_BIND) {
-            printf("cd bind\n");  
+            printf("cd bind\n"); 
+            // bind and wait for connection, then begin forwarding
         }
         else {
             socks4_client_free(client);
@@ -205,7 +200,8 @@ read_cb(struct bufferevent *bev, void *ctx)
 static void
 event_cb(struct bufferevent *bev UNUSED, short events, void *ctx)
 {
-    printf("4. ctx: %p\n", ctx);
+    //printf("4. ctx: %p\n", ctx);
+
     socks4_client_t *client = (socks4_client_t *)ctx;
     if (events & BEV_EVENT_ERROR) {
         fprintf(stderr, "Error from socks4 client bufferevent\n");

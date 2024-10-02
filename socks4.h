@@ -17,6 +17,7 @@ typedef struct socks4_client {
     struct bufferevent *base;
     struct bufferevent *dst;
     bool dc;
+    // used when dst bev was allocated, but wasnt set to the struct
     bool has_dst;
 } socks4_client_t;
 
