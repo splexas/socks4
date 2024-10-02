@@ -16,6 +16,8 @@
 typedef struct socks4_client {
     struct bufferevent *base;
     struct bufferevent *dst;
+    bool dc;
+    bool has_dst;
 } socks4_client_t;
 
 typedef struct socks4_packet {

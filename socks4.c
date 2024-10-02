@@ -19,14 +19,16 @@ static inline void socks4_client_free(socks4_client_t *client)
     Reason being there are pending callback (to be executed) for the bufferevent. Meaning the bufferevent will be released only after all pending callbacks have been executed.
     */
 
-    printf("freeing client %p\n", client);
+    printf("freeing client %p. dst: %p\n", client, client->dst);
 
     // https://github.com/libevent/libevent/blob/master/bufferevent.c#L811
     bufferevent_free(client->base);
 
-    if (client->dst != NULL) {
-        bufferevent_free(client->dst);
+    if (client->has_dst) {
+        client->dc = true;
+        return;
     }
+
     free(client);
 }
 
@@ -35,6 +37,11 @@ dst_read_cb(struct bufferevent *bev, void *ctx)
 {
     printf("1. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
+    if (client->dc == true) {
+        bufferevent_free(bev);
+        free(client);
+        return;
+    }
     struct evbuffer *input = bufferevent_get_input(bev);
 
     if (bufferevent_write_buffer(client->base,
@@ -51,6 +58,12 @@ dst_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
     printf("2. ctx: %p\n", ctx);
     socks4_client_t *client = (socks4_client_t *)ctx;
+    if (client->dc == true) {
+        printf("dc flag set. disconnecting dst bev and freeing client\n");
+        bufferevent_free(bev);
+        free(client);
+        return;
+    }
     if (events & BEV_EVENT_CONNECTED) {
         fprintf(stdout, "Destination bufferevent connected!\n");
 
@@ -170,6 +183,7 @@ read_cb(struct bufferevent *bev, void *ctx)
                 socks4_client_free(client);
                 return;
             }
+            client->has_dst = true;
         }
         else if (p->cd == SOCKS4_CD_BIND) {
             printf("cd bind\n");  
@@ -226,6 +240,8 @@ accept_conn_cb(struct evconnlistener *listener,
     /* init client */ 
     client->base = bev;
     client->dst = NULL;
+    client->dc = false;
+    client->has_dst = false;
 
     bufferevent_setcb(bev, read_cb, NULL, event_cb, (void *)client);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
